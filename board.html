@@ -1,0 +1,66 @@
+<!doctype html>
+
+<html lang="en" style="background-image:url(https://source.unsplash.com/random/800x600); background-repeat: no-repeat;
+    background-size:cover;">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+	<div id="my_camera"></div>
+
+
+	<script type="text/javascript" src="webcam.min.js"></script>
+	<script type="text/javascript" src="lib/axios/dist/axios.standalone.js"></script>
+	<script type="text/javascript" src="lib/CryptoJS/rollups/hmac-sha256.js"></script>
+	<script type="text/javascript" src="lib/CryptoJS/rollups/sha256.js"></script>
+	<script type="text/javascript" src="lib/CryptoJS/components/hmac.js"></script>
+	<script type="text/javascript" src="lib/CryptoJS/components/enc-base64.js"></script>
+	<script type="text/javascript" src="lib/url-template/url-template.js"></script>
+	<script type="text/javascript" src="lib/apiGatewayCore/sigV4Client.js"></script>
+	<script type="text/javascript" src="lib/apiGatewayCore/apiGatewayClient.js"></script>
+	<script type="text/javascript" src="lib/apiGatewayCore/simpleHttpClient.js"></script>
+	<script type="text/javascript" src="lib/apiGatewayCore/utils.js"></script>
+	<script type="text/javascript" src="apigClient.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+
+	<!-- Configure a few settings and attach camera -->
+	<script language="JavaScript">
+		Webcam.set({
+			width: window.innerWidth,
+			height: window.innerHeight,
+			image_format: 'jpeg',
+			jpeg_quality: 100
+		});
+		Webcam.attach( '#my_camera' );
+		var apigClient = apigClientFactory.newClient({
+  		accessKey: 'AKIAJCCBTQK2XLL4PRQQ',
+  		secretKey: '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',
+		});
+	</script>
+	<script language="JavaScript">
+			let timerId = setInterval(() => take_snapshot(), 2000);
+	</script>
+
+
+
+	<!-- Code to handle taking the snapshot and displaying it locally -->
+	<script language="JavaScript">
+		function take_snapshot() {
+			// take snapshot and get image data
+			Webcam.snap( function(data_uri) {
+				var params = {};
+				var additionalParms = {};
+				apigClient.faceIdentifyPost(params, data_uri,additionalParms)
+					.then(function(result){
+							console.log(result);
+					}).catch( function(result){
+						console.log(result);
+					});
+			});
+}
+	</script>
+
+</body>
+</html>

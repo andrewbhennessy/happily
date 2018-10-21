@@ -1,0 +1,134 @@
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>WebcamJS Test Page</title>
+        <style type="text/css">
+            body { font-family: Helvetica, sans-serif; }
+            h2, h3 { margin-top:0; }
+            form { margin-top: 15px; }
+            form > input { margin-right: 15px; }
+            #results { float:right; margin:20px; padding:20px; border:1px solid; background:#ccc; }
+        </style>
+        <link rel="shortcut icon" href="#">
+    </head>
+    <body>
+        <div id="results">Your captured image will appear here...</div>
+
+        <h1>WebcamJS Test Page</h1>
+        <h3>Demonstrates simple 320x240 capture &amp; display</h3>
+
+        <div id="my_camera"></div>
+
+        <!-- First, include the Webcam.js JavaScript Library -->
+        <script type="text/javascript" src="webcam.min.js"></script>
+
+        <!-- Configure a few settings and attach camera -->
+        <script language="JavaScript">
+            Webcam.set({
+                width: 320,
+                height: 240,
+                image_format: 'jpeg',
+                jpeg_quality: 90
+            });
+            Webcam.attach( '#my_camera' );
+        </script>
+
+        <!-- A button for taking snaps -->
+        <form>
+            <input type=button value="Take Snapshot" onClick="take_snapshot()">
+        </form>
+
+        <!-- Code to handle taking the snapshot and displaying it locally -->
+        <script language="JavaScript">
+            function take_snapshot() {
+                // take snapshot and get image data
+                Webcam.snap( function(data_uri) {
+                    //If this function can see upload file lets trigger that
+                    var S3Tools = new S3ToolsClass();
+                    S3Tools.uploadFile(data_uri);
+                } );
+            }
+        </script>
+
+        <script type='text/javascript' src='base64-binary.js'></script>
+        <script type='text/javascript' src='sha1.js'></script>
+
+        <!-- Loading aws -->
+        <script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
+
+        <!-- Configure/post file -->
+        <script type="text/javascript">
+            var bucketName = "amazonphotodb";
+            var AWSKeyId = "AKIAJCCBTQK2XLL4PRQQ";
+            //Setting up policy and signature
+            POLICY_JSON = { "expiration": "2018-12-01T12:00:00.000Z",
+                "conditions": []};
+            var secret = "CYuoXWLSul3PxjMNXpYgeiZAE4/jU0zWzC5WQcpz";
+// Create Base64 Object
+var Base64={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",encode:function(e){var t="";var n,r,i,s,o,u,a;var f=0;e=Base64._utf8_encode(e);while(f<e.length){n=e.charCodeAt(f++);r=e.charCodeAt(f++);i=e.charCodeAt(f++);s=n>>2;o=(n&3)<<4|r>>4;u=(r&15)<<2|i>>6;a=i&63;if(isNaN(r)){u=a=64}else if(isNaN(i)){a=64}t=t+this._keyStr.charAt(s)+this._keyStr.charAt(o)+this._keyStr.charAt(u)+this._keyStr.charAt(a)}return t},decode:function(e){var t="";var n,r,i;var s,o,u,a;var f=0;e=e.replace(/[^A-Za-z0-9+/=]/g,"");while(f<e.length){s=this._keyStr.indexOf(e.charAt(f++));o=this._keyStr.indexOf(e.charAt(f++));u=this._keyStr.indexOf(e.charAt(f++));a=this._keyStr.indexOf(e.charAt(f++));n=s<<2|o>>4;r=(o&15)<<4|u>>2;i=(u&3)<<6|a;t=t+String.fromCharCode(n);if(u!=64){t=t+String.fromCharCode(r)}if(a!=64){t=t+String.fromCharCode(i)}}t=Base64._utf8_decode(t);return t},_utf8_encode:function(e){e=e.replace(/rn/g,"n");var t="";for(var n=0;n<e.length;n++){var r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r)}else if(r>127&&r<2048){t+=String.fromCharCode(r>>6|192);t+=String.fromCharCode(r&63|128)}else{t+=String.fromCharCode(r>>12|224);t+=String.fromCharCode(r>>6&63|128);t+=String.fromCharCode(r&63|128)}}return t},_utf8_decode:function(e){var t="";var n=0;var r=c1=c2=0;while(n<e.length){r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r);n++}else if(r>191&&r<224){c2=e.charCodeAt(n+1);t+=String.fromCharCode((r&31)<<6|c2&63);n+=2}else{c2=e.charCodeAt(n+1);c3=e.charCodeAt(n+2);t+=String.fromCharCode((r&15)<<12|(c2&63)<<6|c3&63);n+=3}}return t}}
+            
+            var policy = Base64.encode(JSON.stringify(POLICY_JSON));
+            var signature = b64_hmac_sha1(secret, policy);
+
+//Upload file (called from take_snapshot())
+function S3ToolsClass() {
+
+    this.uploadFile = function(file) {
+        // display results in page
+        document.getElementById('results').innerHTML =
+            '<h2>Here is your image:</h2>' +
+            '<img src="'+file+'"/>';
+
+        var fd = new FormData();
+        fd.append('key', "coolimage.jpeg");
+        fd.append('AWSAccessKeyId', AWSKeyId);
+        fd.append('acl', 'public-read');
+        fd.append('policy', policy);
+        fd.append('signature', signature);      
+        fd.append('file', new File([dataURItoBlob(file)], "coolimage1.jpeg"));
+        console.log(dataURItoBlob(file));
+        var xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener("progress", uploadProgress, false);
+        xhr.addEventListener("load", uploadComplete, false);
+        xhr.addEventListener("error", uploadFailed, false);
+        xhr.addEventListener("abort", uploadCanceled, false);
+        xhr.open('POST', 'https://s3.amazonaws.com/amazonphotodb/', true); //MUST BE LAST LINE BEFORE YOU SEND
+        xhr.send(fd);
+    }
+    function uploadProgress(evt) {
+    }
+
+    function uploadComplete(evt) {
+    }
+
+    function uploadFailed(evt) {
+    }
+
+    function uploadCanceled(evt) {
+    }
+
+    function dataURItoBlob(dataURI) {
+        // convert base64/URLEncoded data component to raw binary data held in a string
+        var byteString;
+        if (dataURI.split(',')[0].indexOf('base64') >= 0)
+            byteString = atob(dataURI.split(',')[1]);
+        else
+            byteString = unescape(dataURI.split(',')[1]);
+
+        // separate out the mime component
+        var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+
+        // write the bytes of the string to a typed array
+        var ia = new Uint8Array(byteString.length);
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+
+        return new Blob([ia], {type:'image/jpeg'});
+    }
+}
+        </script>
+    </body>
+</html>
