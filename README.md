@@ -10,7 +10,7 @@ An experimental emotional monitoring project utilizing distributed cameras, Dyna
 NCR mobile kiosk solutions. How can we further brand intelligence through analyzing customer behavior through video? We pivoted last minute to leverage the powerful sentimental capabilities of the Amazon Rekognition pipeline.
 
 ## What it does
-As a result---the ability to candidly collect a timeline of peoples "emotions"!
+Candidly collect a timeline of peoples "emotions". Shares general emotional data with our platform, and allows individuals to scan their faces and look at their own data.
 
 ## How we built it
 Low overhead web app that sends photos through APIgateway to Lambda function that sends data in and out of Rekognition pipeline. We utilized the collections capability to track every interaction unique people have and store everything in DynamoDB. We also utilized the instant SDK creation capabilities of Amazon APIgateway for javascript.
